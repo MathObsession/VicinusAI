@@ -11,9 +11,9 @@ from flask import (
     stream_with_context,
 )
 
-import config
-from simulator import simulate_stream
-from turbo_client import UpstreamError, probe, stream_chat_completions
+from . import config
+from .simulator import simulate_stream
+from .turbo_client import UpstreamError, probe, stream_chat_completions
 
 app = Flask(__name__, static_folder=None)
 

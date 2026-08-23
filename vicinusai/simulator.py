@@ -2,7 +2,7 @@ import json
 import random
 import time
 
-import config
+from . import config
 
 TOTAL_LAYERS = config.MODEL_CARD["layers"]
 EXPERTS_PER_LAYER = config.MODEL_CARD["experts_per_layer"]

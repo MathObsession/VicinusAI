@@ -2,7 +2,7 @@ import json
 
 import requests
 
-import config
+from . import config
 
 
 class UpstreamError(Exception):

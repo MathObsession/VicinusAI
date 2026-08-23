@@ -2,3 +2,8 @@ node_modules/
 dist/
 .env    
 .venv/
+__pycache__/
+*.egg-info/
+build/
+scratch/
+.DS_Store

@@ -33,7 +33,20 @@ The console gives TurboFieldfare's local server a browser UI:
                                               TurboFieldfareServer (Swift)
 ```
 
-## Prerequisites
+## Install (Homebrew)
+
+```bash
+brew tap MathObsession/tap https://github.com/MathObsession/homebrew-tap
+brew install mathobsession/tap/vicinus-ai
+vicinus-ai                       # boots inference server :8080 + web UI :5001
+```
+
+First run downloads the Gemma 4 model (~15 GB, once) to
+`~/Library/Application Support/VicinusAI/gemma4.gturbo`. Point
+`VICINUS_MODEL_DIR` at an existing `.gturbo` installation to skip it.
+`Ctrl+C` stops both servers cleanly.
+
+## Prerequisites (development)
 
 - Python 3.10+ and Node.js 18+
 - Optional: the [turbo-fieldfare](https://github.com/drumih/turbo-fieldfare)
@@ -41,13 +54,21 @@ The console gives TurboFieldfare's local server a browser UI:
 
 ## Run
 
-1. Backend:
+1. One-command stack (recommended):
 
 ```bash
-cd backend
-python3 -m venv .venv
-.venv/bin/pip install -r requirements.txt
-.venv/bin/python app.py          # serves http://127.0.0.1:5001
+pip install -e .
+vicinus-ai                       # http://localhost:5001 (UI) + :8080 (inference)
+```
+
+Useful flags: `--no-turbo` (simulated UI only), `--skip-download`,
+`--model PATH`, `--flask-port`, `--turbo-port`.
+
+2. Backend only:
+
+```bash
+pip install -e .
+python -m vicinusai.app          # serves http://127.0.0.1:5001
 ```
 
 2. Frontend — either the dev server (hot reload):
