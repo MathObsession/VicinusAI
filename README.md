@@ -27,11 +27,12 @@ vicinus-ai
 vicinus-ai --dev
 ```
 
-In dev mode the web backend owns the inference server, which unlocks a
-**Save & reload model** button in the settings panel (toggle Dev mode in the
-sidebar). Saving restarts TurboFieldfareServer with the selected runtime
-flags (context window, expert-cache slots). Sampling parameters —
-temperature, top-k, top-p, seed — always apply per message, no reload needed.
+In dev mode the web backend owns the inference server, which unlocks
+**Reload model** and **Save & reload runtime flags** buttons in the settings
+panel (toggle Dev mode in the sidebar). Reloading restarts
+TurboFieldfareServer with the selected runtime flags (context window,
+expert-cache slots, prefill, rdadvise). Sampling parameters — temperature,
+top-k, top-p, seed — always apply per message, no reload needed.
 
 ## Documentation
 Vicinus AI is a homebrew tap of the repository [turbo-fieldfare](https://github.com/drumih/turbo-fieldfare). It is made to simplify the use of the repository's built in server and wrap it around a calming, good looking UI.

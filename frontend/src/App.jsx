@@ -175,43 +175,65 @@ export default function App() {
     }
   }, [refreshHealth, refreshRuntime])
 
-  const applyRuntimeSettings = useCallback(async () => {
-    if (saveStatus !== 'idle') return
-    setSaveStatus('saving')
-    setError(null)
-    try {
-      await saveRuntimeSettings({
+  const pushRuntime = useCallback(
+    async (payload) => {
+      if (saveStatus !== 'idle') return false
+      setSaveStatus('saving')
+      setError(null)
+      try {
+        await saveRuntimeSettings(payload)
+      } catch (e) {
+        setSaveStatus('idle')
+        setError(String(e.message || e))
+        return false
+      }
+      setSaveStatus('reloading')
+      refreshHealth()
+      const deadline = Date.now() + 240000
+      let live = false
+      while (Date.now() < deadline) {
+        await new Promise((r) => setTimeout(r, 2000))
+        try {
+          const h = await fetchHealth()
+          if (h.mode === 'live') {
+            live = true
+            break
+          }
+        } catch {
+          // keep polling until the deadline
+        }
+      }
+      setSaveStatus('idle')
+      refreshHealth()
+      refreshRuntime()
+      if (!live) {
+        setError('Model did not become healthy within 4 minutes after reload.')
+      }
+      return live
+    },
+    [saveStatus, refreshHealth, refreshRuntime],
+  )
+
+  const applyRuntimeSettings = useCallback(
+    () =>
+      pushRuntime({
         max_context: Number(settings.context),
         expert_cache_slots: Number(settings.cache_slots),
-      })
-    } catch (e) {
-      setSaveStatus('idle')
-      setError(String(e.message || e))
-      return
-    }
-    setSaveStatus('reloading')
-    refreshHealth()
-    const deadline = Date.now() + 240000
-    let live = false
-    while (Date.now() < deadline) {
-      await new Promise((r) => setTimeout(r, 2000))
-      try {
-        const h = await fetchHealth()
-        if (h.mode === 'live') {
-          live = true
-          break
-        }
-      } catch {
-        // keep polling until the deadline
-      }
-    }
-    setSaveStatus('idle')
-    refreshHealth()
-    refreshRuntime()
-    if (!live) {
-      setError('Model did not become healthy within 4 minutes after reload.')
-    }
-  }, [saveStatus, settings, refreshHealth, refreshRuntime])
+        prefill: String(settings.prefill),
+        rdadvise: String(settings.rdadvise),
+      }),
+    [pushRuntime, settings],
+  )
+
+  const reloadModel = useCallback(
+    () =>
+      pushRuntime({
+        ...settings,
+        max_context: Number(settings.context),
+        expert_cache_slots: Number(settings.cache_slots),
+      }),
+    [pushRuntime, settings],
+  )
 
   const send = useCallback(
     async (text) => {
@@ -392,6 +414,7 @@ export default function App() {
             runtime={runtime}
             saveStatus={saveStatus}
             onSave={applyRuntimeSettings}
+            onReload={reloadModel}
           />
           <ExpertVisualizer telemetry={telemetry} active={streaming} mode={mode} />
         </aside>

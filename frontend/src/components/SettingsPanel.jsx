@@ -21,6 +21,7 @@ export default function SettingsPanel({
   runtime,
   saveStatus,
   onSave,
+  onReload,
 }) {
   function set(key, value) {
     onChange({ ...settings, [key]: value })
@@ -42,9 +43,10 @@ export default function SettingsPanel({
   } else if (saveStatus === 'reloading') {
     hint = 'Restarting TurboFieldfareServer with the new flags…'
   } else if (!runtime.running) {
-    hint = 'Inference server is not running — Save will start it.'
+    hint = 'Inference server is not running — Reload will start it.'
   } else {
-    hint = 'Save restarts the local inference server with these flags.'
+    hint =
+      'Sampling applies per message. Reload restarts the engine with context, cache, prefill & rdadvise flags.'
   }
 
   return (
@@ -143,7 +145,9 @@ export default function SettingsPanel({
             onChange={(e) => set('rdadvise', e.target.value)}
           >
             <option value="off">off</option>
+            <option value="default">default</option>
             <option value="bounded">bounded</option>
+            <option value="adaptive">adaptive</option>
           </select>
           <span />
         </label>
@@ -180,10 +184,15 @@ export default function SettingsPanel({
           <button
             type="button"
             className="ghost-btn save-btn"
-            disabled={busy || !onSave}
-            onClick={onSave}
+            disabled={busy || !onReload}
+            onClick={onReload}
           >
-            {saveLabel}
+            {saveStatus === 'idle' ? 'Reload model' : saveLabel}
+          </button>
+        )}
+        {managed && onSave && (
+          <button type="button" className="ghost-btn" disabled={busy} onClick={onSave}>
+            Save & reload runtime flags
           </button>
         )}
         <p className="hint">{hint}</p>

@@ -18,17 +18,26 @@ ALLOWED_CONTEXTS = (4096, 8192, 16384, 32768, 65536)
 ALLOWED_SLOTS = (8, 16, 24, 32)
 ALLOWED_POLICY = ("lfu", "lru")
 ALLOWED_PROMPT_CACHE = ("off", "single-prefix")
+ALLOWED_PREFILL = ("on", "off")
+ALLOWED_RDADVISE = ("off", "default", "bounded", "adaptive")
 
 DEFAULT_SETTINGS = {
     "max_context": 16384,
     "expert_cache_slots": 16,
     "expert_cache_policy": "lfu",
     "prompt_cache_mode": "single-prefix",
+    "prefill": "on",
+    "rdadvise": "off",
 }
 
 
-def validate_settings(raw: dict) -> tuple[dict | None, str | None]:
-    """Return (clean_settings, None) or (None, error_message)."""
+def validate_settings(raw: dict, current: dict | None = None) -> tuple[dict | None, str | None]:
+    """Return (clean_settings, None) or (None, error_message).
+
+    Unknown keys (e.g. sampling parameters, which apply per request) are
+    ignored. Cross-field rule: chunked prefill needs >= 16 cache slots.
+    """
+    cur = dict(DEFAULT_SETTINGS if current is None else current)
     clean = {}
     ctx = raw.get("max_context")
     if ctx is not None:
@@ -50,6 +59,23 @@ def validate_settings(raw: dict) -> tuple[dict | None, str | None]:
         if pcm not in ALLOWED_PROMPT_CACHE:
             return None, f"prompt_cache_mode must be one of {ALLOWED_PROMPT_CACHE}"
         clean["prompt_cache_mode"] = pcm
+    prefill = raw.get("prefill")
+    if prefill is not None:
+        if prefill not in ALLOWED_PREFILL:
+            return None, f"prefill must be one of {ALLOWED_PREFILL}"
+        clean["prefill"] = prefill
+    rdadvise = raw.get("rdadvise")
+    if rdadvise is not None:
+        if rdadvise not in ALLOWED_RDADVISE:
+            return None, f"rdadvise must be one of {ALLOWED_RDADVISE}"
+        clean["rdadvise"] = rdadvise
+
+    merged = {**cur, **clean}
+    if merged.get("prefill") == "on" and int(merged.get("expert_cache_slots", 16)) < 16:
+        return None, (
+            "chunked prefill requires at least 16 expert-cache slots "
+            "(set Prefill to off, or pick 16+ slots)"
+        )
     return clean, None
 
 
@@ -101,6 +127,10 @@ class TurboSupervisor:
             s["expert_cache_policy"],
             "--prompt-cache-mode",
             s["prompt_cache_mode"],
+            "--prefill",
+            s["prefill"],
+            "--rdadvise",
+            s["rdadvise"],
         ]
 
     def _stop_current(self, timeout: float = 15.0) -> None:
@@ -139,7 +169,7 @@ class TurboSupervisor:
 
     def apply(self, raw_settings: dict) -> tuple[bool, str | None]:
         """Validate, persist, and restart the server with new settings."""
-        clean, err = validate_settings(raw_settings)
+        clean, err = validate_settings(raw_settings, self.settings)
         if err:
             return False, err
         with self._lock:
