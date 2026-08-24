@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { fetchHealth, streamChat } from './api.js'
+import {
+  fetchHealth,
+  fetchRuntimeSettings,
+  saveRuntimeSettings,
+  streamChat,
+} from './api.js'
 import ChatWindow from './components/ChatWindow.jsx'
 import Composer from './components/Composer.jsx'
 import ExpertVisualizer from './components/ExpertVisualizer.jsx'
@@ -125,6 +130,8 @@ export default function App() {
   const [stats, setStats] = useState(EMPTY_STATS)
   const [telemetry, setTelemetry] = useState(null)
   const [error, setError] = useState(null)
+  const [runtime, setRuntime] = useState(null)
+  const [saveStatus, setSaveStatus] = useState('idle')
   const [userName] = useState(loadOrCreateUsername)
   const abortRef = useRef(null)
 
@@ -151,11 +158,60 @@ export default function App() {
       .catch(() => setHealth({ mode: 'unreachable' }))
   }, [])
 
+  const refreshRuntime = useCallback(() => {
+    fetchRuntimeSettings()
+      .then(setRuntime)
+      .catch(() => {})
+  }, [])
+
   useEffect(() => {
     refreshHealth()
+    refreshRuntime()
     const t = setInterval(refreshHealth, 10000)
-    return () => clearInterval(t)
-  }, [refreshHealth])
+    const rt = setInterval(refreshRuntime, 10000)
+    return () => {
+      clearInterval(t)
+      clearInterval(rt)
+    }
+  }, [refreshHealth, refreshRuntime])
+
+  const applyRuntimeSettings = useCallback(async () => {
+    if (saveStatus !== 'idle') return
+    setSaveStatus('saving')
+    setError(null)
+    try {
+      await saveRuntimeSettings({
+        max_context: Number(settings.context),
+        expert_cache_slots: Number(settings.cache_slots),
+      })
+    } catch (e) {
+      setSaveStatus('idle')
+      setError(String(e.message || e))
+      return
+    }
+    setSaveStatus('reloading')
+    refreshHealth()
+    const deadline = Date.now() + 240000
+    let live = false
+    while (Date.now() < deadline) {
+      await new Promise((r) => setTimeout(r, 2000))
+      try {
+        const h = await fetchHealth()
+        if (h.mode === 'live') {
+          live = true
+          break
+        }
+      } catch {
+        // keep polling until the deadline
+      }
+    }
+    setSaveStatus('idle')
+    refreshHealth()
+    refreshRuntime()
+    if (!live) {
+      setError('Model did not become healthy within 4 minutes after reload.')
+    }
+  }, [saveStatus, settings, refreshHealth, refreshRuntime])
 
   const send = useCallback(
     async (text) => {
@@ -333,6 +389,9 @@ export default function App() {
             onChange={setSettings}
             disabled={streaming}
             mode={mode}
+            runtime={runtime}
+            saveStatus={saveStatus}
+            onSave={applyRuntimeSettings}
           />
           <ExpertVisualizer telemetry={telemetry} active={streaming} mode={mode} />
         </aside>

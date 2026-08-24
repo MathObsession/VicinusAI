@@ -4,6 +4,25 @@ export async function fetchHealth() {
   return res.json()
 }
 
+export async function fetchRuntimeSettings() {
+  const res = await fetch('/api/runtime-settings')
+  if (!res.ok) throw new Error(`runtime settings failed: HTTP ${res.status}`)
+  return res.json()
+}
+
+export async function saveRuntimeSettings(payload) {
+  const res = await fetch('/api/runtime-settings', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok || data.ok === false) {
+    throw new Error(data.error || `save failed: HTTP ${res.status}`)
+  }
+  return data
+}
+
 function parseFrames(buffer, onEvent) {
   let idx
   while ((idx = buffer.indexOf('\n\n')) >= 0) {

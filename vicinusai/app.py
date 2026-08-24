@@ -14,10 +14,16 @@ from flask import (
 from . import config
 from .simulator import simulate_stream
 from .turbo_client import UpstreamError, probe, stream_chat_completions
+from .turbo_supervisor import TurboSupervisor
 
 app = Flask(__name__, static_folder=None)
 
 _DIST = os.path.abspath(config.FRONTEND_DIST)
+
+# Dev-mode ownership of the inference server (VICINUS_MANAGE_TURBO=1).
+supervisor = TurboSupervisor.from_env()
+if supervisor is not None:
+    supervisor.start()
 
 
 def sse(obj):
@@ -34,8 +40,37 @@ def health():
             "upstream_url": config.TURBO_BASE_URL,
             "upstream": upstream,
             "model": config.MODEL_CARD,
+            "managed": supervisor is not None,
         }
     )
+
+
+@app.get("/api/runtime-settings")
+def runtime_settings_get():
+    if supervisor is None:
+        return jsonify({"managed": False})
+    snap = supervisor.snapshot()
+    snap["managed"] = True
+    return jsonify(snap)
+
+
+@app.post("/api/runtime-settings")
+def runtime_settings_post():
+    if supervisor is None:
+        return (
+            jsonify(
+                {
+                    "ok": False,
+                    "error": "dev reload unavailable: backend does not own the "
+                    "inference server. Launch with `vicinus-ai --dev`.",
+                }
+            ),
+            409,
+        )
+    body = request.get_json(force=True, silent=True) or {}
+    ok, err = supervisor.apply(body)
+    status = 200 if ok else 400
+    return jsonify({"ok": ok, "error": err, **supervisor.snapshot()}), status
 
 
 def _sanitize_messages(raw):
@@ -137,4 +172,13 @@ def assets(path):
 
 
 if __name__ == "__main__":
+    import signal
+    import sys
+
+    def _terminate(signum, frame):
+        if supervisor is not None:
+            supervisor.stop()
+        sys.exit(0)
+
+    signal.signal(signal.SIGTERM, _terminate)
     app.run(host="127.0.0.1", port=config.FLASK_PORT, threaded=True)
