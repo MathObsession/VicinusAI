@@ -7,3 +7,6 @@ __pycache__/
 build/
 scratch/
 .DS_Store
+build/
+.build/
+.swiftpm/

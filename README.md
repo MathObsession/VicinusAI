@@ -21,6 +21,17 @@ to run the app use:
 vicinus-ai
 ```
 
+### GUI launcher
+
+```bash
+vicinus-ai-gui
+```
+
+A small native macOS app (AppKit + WebKit) ships with the formula. It opens a
+window with a **Start servers** button; once the stack is up, the console UI
+renders inside the window via WebKit — locked to `127.0.0.1:5001`, external
+links open in your default browser. Quitting the window stops all servers.
+
 ### Dev mode
 
 ```bash
