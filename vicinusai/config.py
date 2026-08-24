@@ -1,5 +1,4 @@
 import os
-import sys
 
 TURBO_BASE_URL = os.environ.get("TURBO_BASE_URL", "http://127.0.0.1:8080")
 TURBO_MODEL_ID = os.environ.get("TURBO_MODEL_ID", "gemma-4-26b-a4b-it")
@@ -11,18 +10,20 @@ FLASK_PORT = int(os.environ.get("FLASK_PORT", "5001"))
 
 
 def _default_frontend_dist() -> str:
-    here = os.path.dirname(os.path.abspath(__file__))
-    candidates = []
-    # Homebrew layout: venv lives at <prefix>/opt/<name>/libexec, static
-    # assets are installed at <prefix>/share/vicinus-ai/dist.
-    prefix = os.path.abspath(os.path.join(sys.prefix, "..", "..", ".."))
-    candidates.append(os.path.join(prefix, "share", "vicinus-ai", "dist"))
-    # Development checkout layout.
-    candidates.append(os.path.normpath(os.path.join(here, "..", "frontend", "dist")))
-    for cand in candidates:
+    # Walk every ancestor of this file looking for <prefix>/share/vicinus-ai/
+    # dist. This handles Homebrew's Cellar layouts regardless of whether
+    # sys.prefix reports the opt/ symlink path or the resolved Cellar path.
+    here = os.path.abspath(__file__)
+    node = os.path.dirname(here)
+    while node != os.path.dirname(node):
+        cand = os.path.join(node, "share", "vicinus-ai", "dist")
         if os.path.isfile(os.path.join(cand, "index.html")):
             return cand
-    return candidates[-1]
+        node = os.path.dirname(node)
+    # Development checkout layout.
+    return os.path.normpath(
+        os.path.join(os.path.dirname(here), "..", "frontend", "dist")
+    )
 
 
 FRONTEND_DIST = os.environ.get("FRONTEND_DIST") or _default_frontend_dist()
