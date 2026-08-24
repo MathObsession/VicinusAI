@@ -3,7 +3,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-swift build -c release
+swift build --disable-sandbox -c release
 
 APP=build/VicinusAI.app
 rm -rf "$APP"
