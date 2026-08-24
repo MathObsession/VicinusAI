@@ -474,6 +474,14 @@ code { font-family: var(--mono); font-size: 0.85em; }
 .ghost-btn:hover:not(:disabled) { color: var(--accent); border-color: rgba(124, 108, 212, 0.45); }
 .ghost-btn:disabled { opacity: 0.4; cursor: default; }
 
+.save-btn {
+  margin-top: 2px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: rgba(124, 108, 212, 0.45);
+}
+.save-btn:hover:not(:disabled) { background: rgba(124, 108, 212, 0.18); }
+
 .visualizer .hint { margin: 0 0 12px; }
 
 .grid {

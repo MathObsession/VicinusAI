@@ -102,6 +102,12 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="skip the Swift inference server entirely (simulated mode)",
     )
+    parser.add_argument(
+        "--dev",
+        action="store_true",
+        help="let the web backend own the inference server so settings "
+        "saves can reload the model with new runtime flags",
+    )
     return parser
 
 
@@ -137,12 +143,30 @@ def main(argv=None) -> int:
     try:
         print("🚀 Booting VicinusAI …")
 
+        env = os.environ.copy()
+        env["FLASK_PORT"] = str(args.flask_port)
+        env.setdefault("TURBO_BASE_URL", f"http://127.0.0.1:{args.turbo_port}")
+        env.setdefault("TURBO_PORT", str(args.turbo_port))
+
         if not args.no_turbo:
             server_bin = find_tool("TurboFieldfareServer")
             model_path = (args.model or default_model_dir()).expanduser()
-            if server_bin is None:
+            model_ok = (
+                ensure_model(model_path, args.skip_download)
+                if server_bin is not None
+                else False
+            )
+            if args.dev and server_bin is not None and model_ok:
+                print(
+                    "🧠 Dev mode: the web backend owns the inference server "
+                    "(settings saves reload it)."
+                )
+                env["VICINUS_MANAGE_TURBO"] = "1"
+                env["TURBO_SERVER_BIN"] = str(server_bin)
+                env["VICINUS_MODEL_PATH"] = str(model_path)
+            elif server_bin is None:
                 print("⚠️  TurboFieldfareServer not on PATH — simulated mode.")
-            elif ensure_model(model_path, args.skip_download):
+            elif model_ok:
                 print(f"🧠 Starting TurboFieldfareServer on :{args.turbo_port} …")
                 turbo = subprocess.Popen(
                     [
@@ -157,10 +181,6 @@ def main(argv=None) -> int:
             else:
                 print(f"⚠️  Model unavailable at {model_path} — simulated mode.")
                 print("    Re-run without --skip-download or set VICINUS_MODEL_DIR.")
-
-        env = os.environ.copy()
-        env["FLASK_PORT"] = str(args.flask_port)
-        env.setdefault("TURBO_BASE_URL", f"http://127.0.0.1:{args.turbo_port}")
 
         print(f"💬 Starting the web console on :{args.flask_port} …")
         chat = subprocess.Popen([sys.executable, "-m", "vicinusai.app"], env=env)

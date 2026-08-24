@@ -75,7 +75,15 @@ vicinus-ai                       # http://localhost:5001 (UI) + :8080 (inference
 ```
 
 Useful flags: `--no-turbo` (simulated UI only), `--skip-download`,
-`--model PATH`, `--flask-port`, `--turbo-port`.
+`--model PATH`, `--flask-port`, `--turbo-port`, and `--dev`.
+
+**Dev mode (`vicinus-ai --dev`)**: the web backend owns the inference server,
+which unlocks the **Save & reload model** button in the settings panel
+(toggle Dev mode in the sidebar). Saving restarts TurboFieldfareServer with
+the selected runtime flags (context window, expert-cache slots) — sampling
+parameters (temperature, top-k, top-p, seed) always apply per message without
+a reload. In normal (non-dev) runs the button is hidden; server flags stay
+fixed for the life of the process.
 
 2. Backend only:
 

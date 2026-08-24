@@ -1,4 +1,5 @@
 const CONTEXTS = [4096, 8192, 16384, 32768, 65536]
+const SLOTS = [8, 16, 24, 32]
 
 const DEFAULTS = {
   temperature: 0.2,
@@ -12,9 +13,38 @@ const DEFAULTS = {
   resident_layers: 0,
 }
 
-export default function SettingsPanel({ settings, onChange, disabled, mode }) {
+export default function SettingsPanel({
+  settings,
+  onChange,
+  disabled,
+  mode,
+  runtime,
+  saveStatus,
+  onSave,
+}) {
   function set(key, value) {
     onChange({ ...settings, [key]: value })
+  }
+
+  const managed = Boolean(runtime?.managed)
+  const busy = disabled || saveStatus === 'saving' || saveStatus === 'reloading'
+
+  let saveLabel = 'Save & reload model'
+  if (saveStatus === 'saving') saveLabel = 'Saving…'
+  else if (saveStatus === 'reloading') saveLabel = 'Reloading model…'
+
+  let hint
+  if (!managed) {
+    hint =
+      mode === 'live'
+        ? 'Live server flags are fixed per process — relaunch TurboFieldfareServer to apply.'
+        : 'Applied live by the simulator.'
+  } else if (saveStatus === 'reloading') {
+    hint = 'Restarting TurboFieldfareServer with the new flags…'
+  } else if (!runtime.running) {
+    hint = 'Inference server is not running — Save will start it.'
+  } else {
+    hint = 'Save restarts the local inference server with these flags.'
   }
 
   return (
@@ -119,17 +149,17 @@ export default function SettingsPanel({ settings, onChange, disabled, mode }) {
         </label>
         <label className="field">
           <span>Cache slots</span>
-          <input
-            type="number"
-            min="4"
-            max="64"
-            step="4"
+          <select
             value={settings.cache_slots}
             disabled={disabled}
-            onChange={(e) =>
-              set('cache_slots', e.target.value === '' ? '' : Number(e.target.value))
-            }
-          />
+            onChange={(e) => set('cache_slots', Number(e.target.value))}
+          >
+            {SLOTS.map((v) => (
+              <option key={v} value={v}>
+                {v}
+              </option>
+            ))}
+          </select>
           <span />
         </label>
         <label className="field">
@@ -146,11 +176,17 @@ export default function SettingsPanel({ settings, onChange, disabled, mode }) {
           />
           <span />
         </label>
-        <p className="hint">
-          {mode === 'live'
-            ? 'Live server flags are fixed per process — relaunch TurboFieldfareServer to apply.'
-            : 'Applied live by the simulator.'}
-        </p>
+        {managed && (
+          <button
+            type="button"
+            className="ghost-btn save-btn"
+            disabled={busy || !onSave}
+            onClick={onSave}
+          >
+            {saveLabel}
+          </button>
+        )}
+        <p className="hint">{hint}</p>
       </section>
 
       <section className="settings">
