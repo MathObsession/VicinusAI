@@ -21,3 +21,5 @@ echo
 echo "✅ Done! Launch the AI stack with:"
 echo "    vicinus-ai"
 echo "(first run downloads the ~15 GB Gemma 4 model once)"
+echo
+echo "Future installs/updates are just: brew install vicinus-ai"
