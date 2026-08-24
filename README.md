@@ -35,9 +35,23 @@ The console gives TurboFieldfare's local server a browser UI:
 
 ## Install (Homebrew)
 
+One line:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/MathObsession/VicinusAI/main/install.sh | bash
+```
+
+or manually:
+
 ```bash
 brew tap MathObsession/tap https://github.com/MathObsession/homebrew-tap
+brew trust mathobsession/tap
 brew install mathobsession/tap/vicinus-ai
+```
+
+then launch everything with:
+
+```bash
 vicinus-ai                       # boots inference server :8080 + web UI :5001
 ```
 
