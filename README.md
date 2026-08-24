@@ -35,16 +35,17 @@ The console gives TurboFieldfare's local server a browser UI:
 
 ## Install (Homebrew)
 
-One-time setup:
-
 ```bash
-curl -fsSL https://raw.githubusercontent.com/MathObsession/VicinusAI/main/install.sh | bash
+brew install mathobsession/tap/vicinus-ai
 ```
 
-From then on, installing or updating is just:
+That single command adds and trusts the tap automatically, then builds
+everything — the Swift inference runtime, the React frontend, and the
+Python console. Afterwards the short form works too:
 
 ```bash
-brew install vicinus-ai
+brew install vicinus-ai          # reinstall / update later
+vicinus-ai                       # boots inference server :8080 + web UI :5001
 ```
 
 then launch everything with:
