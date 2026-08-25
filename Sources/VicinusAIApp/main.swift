@@ -1,5 +1,19 @@
 import AppKit
+import CoreText
 import WebKit
+
+private func registerFont(_ name: String) {
+    guard let dir = Bundle.main.resourcePath,
+          FileManager.default.fileExists(atPath: "\(dir)/\(name).ttf") else { return }
+    let url = URL(fileURLWithPath: "\(dir)/\(name).ttf")
+    var err: Unmanaged<CFError>?
+    CTFontManagerRegisterFontsForURL(url as CFURL, .process, &err)
+    _ = err // already registered is fine
+}
+
+private func uiFont(_ psName: String, _ size: CGFloat) -> NSFont {
+    NSFont(name: psName, size: size) ?? .systemFont(ofSize: size, weight: .regular)
+}
 
 final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate {
     private var window: NSWindow!
@@ -18,6 +32,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.regular)
+        NSApp.appearance = NSAppearance(named: .aqua)
+        registerFont("StackSansNotch-Regular")
+        registerFont("StackSansNotch-Bold")
         buildUI()
         installSignalHandlers()
         NSApp.activate(ignoringOtherApps: true)
@@ -61,36 +78,38 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate {
 
         container = NSView(frame: window.contentLayoutRect)
         container.wantsLayer = true
-        container.layer?.backgroundColor = NSColor(calibratedWhite: 0.97, alpha: 1).cgColor
+        container.layer?.backgroundColor = NSColor.white.cgColor
         window.contentView = container
 
         titleLabel = NSTextField(labelWithString: "VicinusAI")
-        titleLabel.font = .boldSystemFont(ofSize: 28)
+        titleLabel.font = uiFont("StackSansNotch-Bold", 46)
+        titleLabel.textColor = NSColor.black
 
         statusLabel = NSTextField(wrappingLabelWithString: "Servers are not running.")
-        statusLabel.font = .systemFont(ofSize: 13)
-        statusLabel.textColor = .secondaryLabelColor
+        statusLabel.font = uiFont("StackSansNotch-Regular", 18)
+        statusLabel.textColor = NSColor.black
         statusLabel.maximumNumberOfLines = 6
-        statusLabel.preferredMaxLayoutWidth = 560
+        statusLabel.preferredMaxLayoutWidth = 620
         statusLabel.alignment = .center
 
         startButton = NSButton(title: "Start servers", target: self, action: #selector(startServers))
         startButton.bezelStyle = .rounded
         startButton.controlSize = .large
+        startButton.font = uiFont("StackSansNotch-Regular", 22)
         startButton.hasDestructiveAction = false
         startButton.keyEquivalent = "\r"
 
         launcherStack = NSStackView(views: [titleLabel, statusLabel, startButton])
         launcherStack.orientation = .vertical
         launcherStack.alignment = .centerX
-        launcherStack.spacing = 18
+        launcherStack.spacing = 22
         launcherStack.translatesAutoresizingMaskIntoConstraints = false
         container.addSubview(launcherStack)
 
         NSLayoutConstraint.activate([
             launcherStack.centerXAnchor.constraint(equalTo: container.centerXAnchor),
             launcherStack.centerYAnchor.constraint(equalTo: container.centerYAnchor),
-            statusLabel.widthAnchor.constraint(lessThanOrEqualToConstant: 580),
+            statusLabel.widthAnchor.constraint(lessThanOrEqualToConstant: 640),
         ])
 
         window.makeKeyAndOrderFront(nil)
@@ -102,6 +121,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate {
         isReady = false
         serverProcess = nil
         statusLabel.stringValue = status
+        statusLabel.textColor = NSColor.black
         startButton.isHidden = false
         startButton.isEnabled = true
         launcherStack.isHidden = false

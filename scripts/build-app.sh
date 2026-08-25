@@ -10,6 +10,9 @@ rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp .build/release/VicinusAIApp "$APP/Contents/MacOS/VicinusAI"
 
+cp Sources/VicinusAIApp/Resources/StackSansNotch-Regular.ttf "$APP/Contents/Resources/"
+cp Sources/VicinusAIApp/Resources/StackSansNotch-Bold.ttf    "$APP/Contents/Resources/"
+
 # App icon from the frontend favicon.
 ICONDIR="$(mktemp -d)"
 trap 'rm -rf "$ICONDIR"' EXIT
