@@ -38,9 +38,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate {
         buildUI()
         installSignalHandlers()
         NSApp.activate(ignoringOtherApps: true)
+        if locateCLI() == nil {
+            promptRemoveSelf()
+            return
+        }
         if ProcessInfo.processInfo.environment["VICINUS_AI_GUI_AUTOSTART"] == "1" {
             DispatchQueue.main.async { self.startServers() }
         }
+    }
+
+    private func promptRemoveSelf() {
+        let alert = NSAlert()
+        alert.messageText = "VicinusAI backend not found"
+        alert.informativeText =
+            "vicinus-ai-cli was not found. Has the Homebrew formula been uninstalled?\n\n" +
+            "Would you like to remove this application from /Applications?"
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "Remove app")
+        alert.addButton(withTitle: "Cancel")
+        if alert.runModal() == .alertFirstButtonReturn {
+            let appPath = Bundle.main.bundlePath
+            NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: appPath)])
+            NSApp.terminate(nil)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                try? FileManager.default.removeItem(atPath: appPath)
+            }
+        }
+        NSApp.terminate(nil)
     }
 
     private func installSignalHandlers() {
@@ -131,8 +155,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate {
 
     @objc private func startServers() {
         guard let cli = locateCLI() else {
-            statusLabel.stringValue =
-                "Could not find the vicinus-ai command.\nInstall it with: brew install mathobsession/tap/vicinus-ai"
+            promptRemoveSelf()
             return
         }
         startButton.isEnabled = false
@@ -170,7 +193,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate {
         do {
             try proc.run()
         } catch {
-            statusLabel.stringValue = "Failed to launch vicinus-ai:\n\(error.localizedDescription)"
+            statusLabel.stringValue = "Failed to launch vicinus-ai-cli:\n\(error.localizedDescription)"
             startButton.isEnabled = true
             return
         }
@@ -273,15 +296,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate {
 
     private func locateCLI() -> URL? {
         let candidates = [
-            "/opt/homebrew/bin/vicinus-ai",
-            "/usr/local/bin/vicinus-ai",
+            "/opt/homebrew/bin/vicinus-ai-cli",
+            "/usr/local/bin/vicinus-ai-cli",
         ]
         for path in candidates where FileManager.default.isExecutableFile(atPath: path) {
             return URL(fileURLWithPath: path)
         }
         let which = Process()
         which.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-        which.arguments = ["which", "vicinus-ai"]
+        which.arguments = ["which", "vicinus-ai-cli"]
         let pipe = Pipe()
         which.standardOutput = pipe
         which.standardError = FileHandle.nullDevice
