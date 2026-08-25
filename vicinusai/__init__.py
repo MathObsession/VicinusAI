@@ -1,3 +1,3 @@
 """VicinusAI: web console for the TurboFieldfare inference runtime."""
 
-__version__ = "0.1.6"
+__version__ = "0.1.7"

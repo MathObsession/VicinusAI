@@ -27,10 +27,13 @@ vicinus-ai
 vicinus-ai-gui
 ```
 
-A small native macOS app (AppKit + WebKit) ships with the formula. It opens a
-window with a **Start servers** button; once the stack is up, the console UI
-renders inside the window via WebKit — locked to `127.0.0.1:5001`, external
-links open in your default browser. Quitting the window stops all servers.
+A small native macOS app (AppKit + WebKit) ships with the formula. On first
+launch it copies itself to `/Applications/VicinusAI.app` so it lives there
+permanently — double-click it from Finder anytime afterwards, or keep using
+`vicinus-ai-gui` to stay up to date. The window shows a **Start servers**
+button; once the stack is up, the console UI renders inside the window via
+WebKit — locked to `127.0.0.1:5001`, external links open in your default
+browser. Quitting the window stops all servers.
 
 ### Dev mode
 
