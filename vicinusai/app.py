@@ -62,7 +62,7 @@ def runtime_settings_post():
                 {
                     "ok": False,
                     "error": "dev reload unavailable: backend does not own the "
-                    "inference server. Launch with `vicinus-ai --dev`.",
+                    "inference server. Launch with `vicinus-ai-cli --dev`.",
                 }
             ),
             409,

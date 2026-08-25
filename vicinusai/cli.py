@@ -68,11 +68,11 @@ def ensure_model(model_path: Path, skip_download: bool) -> bool:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="vicinus-ai",
+        prog="vicinus-ai-cli",
         description="VicinusAI console: TurboFieldfare inference server + web UI",
     )
     parser.add_argument(
-        "--version", action="version", version=f"vicinus-ai {__version__}"
+        "--version", action="version", version=f"vicinus-ai-cli {__version__}"
     )
     parser.add_argument(
         "--host", default="127.0.0.1", help="web UI bind host (default: 127.0.0.1)"
