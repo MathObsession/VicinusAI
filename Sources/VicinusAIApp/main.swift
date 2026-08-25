@@ -118,8 +118,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate {
 
         startButton = NSButton(title: "Start servers", target: self, action: #selector(startServers))
         startButton.bezelStyle = .rounded
-        startButton.controlSize = .large
-        startButton.font = uiFont("StackSansNotch-Regular", 22)
+        startButton.font = uiFont("StackSansNotch-Regular", 16)
         startButton.hasDestructiveAction = false
         startButton.keyEquivalent = "\r"
 
